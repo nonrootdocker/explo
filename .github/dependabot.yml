@@ -1,0 +1,17 @@
+version: 2
+
+updates:
+  # Nix flake inputs (nixpkgs, minimalbase, etc.)
+  - package-ecosystem: "nix"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "nixpkgs"    
+
+  # GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

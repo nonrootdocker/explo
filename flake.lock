@@ -1,0 +1,61 @@
+{
+  "nodes": {
+    "explo-src": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-6V4sig0/QpEW7VKIIxp/5g72QZvUJvYvJO02dYWywmY=",
+        "type": "file",
+        "url": "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64"
+      }
+    },
+    "minimalbase": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1782092731,
+        "narHash": "sha256-Kax+fA7btNGO6IO6ia6zSh38GaExsnkA1sgKt84DffA=",
+        "owner": "nonrootdocker",
+        "repo": "minimalbase",
+        "rev": "bad229bb9cb97a4d49997f84be5c49989f8dde18",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nonrootdocker",
+        "repo": "minimalbase",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1782092127,
+        "narHash": "sha256-JLv04LY64Xf3QNa2bBwRgCCDwRMQaZlJc4xsAOwEfiU=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "42342cbe4e6f9fdf22afb69b611f803c9c5dab67",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "explo-src": "explo-src",
+        "minimalbase": "minimalbase",
+        "nixpkgs": [
+          "minimalbase",
+          "nixpkgs"
+        ]
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
