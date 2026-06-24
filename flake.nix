@@ -3,12 +3,8 @@
   inputs = {
     nixpkgs.follows = "minimalbase/nixpkgs";
     minimalbase.url = "github:nonrootdocker/minimalbase";
-    explo-src = {
-      url = "github:LumePart/Explo/v1.1.2";
-      flake = false;
-    };
   };
-  outputs = { self, nixpkgs, minimalbase, explo-src }:
+  outputs = { self, nixpkgs, minimalbase }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
@@ -26,7 +22,16 @@
     # ships an EMPTY embedded web UI (upstream's release workflow stubs it with
     # `touch src/web/dist/index.html`); only a source build with the Vite
     # frontend embedded serves a working UI.
+    #
+    # version + the three hashes below (src, npmDepsHash, vendorHash) are bumped
+    # together by .github/workflows/update.yml.
     version = "1.1.2";
+    exploSrc = pkgs.fetchFromGitHub {
+      owner = "LumePart";
+      repo = "Explo";
+      tag = "v${version}";
+      hash = "sha256-7FIDRNZn+Yh2c/oLU3Ggb4A9y+5q3vv17eVLmGR2Zeo=";
+    };
 
     # ----------------------------
     # Vite frontend. vite.config.js writes the build to ../dist (i.e.
@@ -35,7 +40,7 @@
     explo-frontend = pkgs.buildNpmPackage {
       pname = "explo-frontend";
       inherit version;
-      src = "${explo-src}/src/web/frontend";
+      src = "${exploSrc}/src/web/frontend";
       npmDepsHash = "sha256-N+i+VFHKJ9OxHyQKJ3vSw50N3tLjvFVPeG5aU0hLzqw=";
       VITE_VERSION = version;
       installPhase = ''
@@ -51,7 +56,7 @@
     explo = pkgs.buildGoModule {
       pname = "explo";
       inherit version;
-      src = explo-src;
+      src = exploSrc;
       vendorHash = "sha256-pa3WaVJU4WY/EyE3VttfEVOwwaxvkfxQj0wrwOmefYQ=";
       subPackages = [ "src/main" ];
       ldflags = [ "-s" "-w" "-X" "explo/src/config.Version=${version}" ];
@@ -100,6 +105,7 @@
     packages.${system} = {
       default = self.packages.${system}.explo-image;
       version = exploVersion;
+      inherit explo explo-frontend;
       explo-image = pkgs.dockerTools.buildImage {
         name = "explo";
         tag = "latest";

@@ -1,0 +1,101 @@
+name: Update explo
+
+on:
+  schedule:
+    - cron: '0 0 */3 * *'   # every 3 days
+  workflow_dispatch:
+
+permissions:
+  contents: read   # this job acts via the App token, not GITHUB_TOKEN
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      UPSTREAM_REPO: LumePart/Explo
+      TAG_REGEX: '^v[0-9]+\.[0-9]+\.[0-9]+$'   # stable releases only
+    steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # Explo is built from source, so bumping it means updating the version AND
+      # recomputing three FOD hashes (fetchFromGitHub src, frontend npmDepsHash,
+      # Go vendorHash). Resolve the latest stable tag, bump `version`, then fold
+      # each reported hash mismatch back into flake.nix until the build is green.
+      - name: Bump version and recompute hashes
+        id: bump
+        run: |
+          set -euo pipefail
+
+          for attempt in 1 2 3; do
+            REFS=$(git ls-remote --tags --refs "https://github.com/${UPSTREAM_REPO}") && break
+            echo "ls-remote attempt $attempt failed; retrying in 15s..."; sleep 15
+          done
+          [ -n "${REFS:-}" ] || { echo "::error::ls-remote failed after 3 attempts"; exit 1; }
+
+          TAG=$(printf '%s\n' "$REFS" | awk -F/ '{print $NF}' | grep -E "${TAG_REGEX}" | sort -V | tail -n1)
+          [ -n "$TAG" ] || { echo "::error::no tag matched ${TAG_REGEX}"; exit 1; }
+          VER="${TAG#v}"
+          CUR=$(grep -oE 'version = "[0-9]+\.[0-9]+\.[0-9]+"' flake.nix | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          echo "current=$CUR latest=$VER"
+          if [ "$VER" = "$CUR" ]; then
+            echo "Already on $VER — nothing to do."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          sed -i -E "s/version = \"[0-9]+\.[0-9]+\.[0-9]+\";/version = \"${VER}\";/" flake.nix
+
+          # Fold reported hash mismatches (src, then npm, then go) into flake.nix.
+          for i in 1 2 3 4 5; do
+            if out=$(nix build -L .#packages.x86_64-linux.explo 2>&1); then
+              echo "build green on iteration $i"; break
+            fi
+            spec=$(printf '%s' "$out" | grep -oE 'specified:[[:space:]]*sha256-[A-Za-z0-9+/=]+' | grep -oE 'sha256-[A-Za-z0-9+/=]+' | head -1)
+            got=$(printf '%s'  "$out" | grep -oE 'got:[[:space:]]*sha256-[A-Za-z0-9+/=]+'        | grep -oE 'sha256-[A-Za-z0-9+/=]+' | head -1)
+            if [ -n "$spec" ] && [ -n "$got" ] && [ "$spec" != "$got" ]; then
+              echo "fixing hash: $spec -> $got"
+              sed -i "s|${spec}|${got}|" flake.nix
+            else
+              echo "::error::build failed without a resolvable hash mismatch:"
+              printf '%s\n' "$out" | tail -30
+              exit 1
+            fi
+          done
+
+          # Confirm the whole image still builds with the new pins.
+          nix build -L >/dev/null
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Open PR
+        if: steps.bump.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: update-explo
+          delete-branch: true
+          title: "Update explo to ${{ steps.bump.outputs.version }}"
+          commit-message: "Update explo to ${{ steps.bump.outputs.version }}"
+          labels: automated
+          body: |
+            Automated bump of explo to ${{ steps.bump.outputs.version }}.
+
+            Bumped `version` and recomputed the source, frontend `npmDepsHash`,
+            and Go `vendorHash`. Verified the image builds.
