@@ -3,13 +3,18 @@
     "explo-src": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-6V4sig0/QpEW7VKIIxp/5g72QZvUJvYvJO02dYWywmY=",
-        "type": "file",
-        "url": "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64"
+        "lastModified": 1781642256,
+        "narHash": "sha256-7FIDRNZn+Yh2c/oLU3Ggb4A9y+5q3vv17eVLmGR2Zeo=",
+        "owner": "LumePart",
+        "repo": "Explo",
+        "rev": "0147b7c15c2ad6f3a5679b552cef848a86729eaf",
+        "type": "github"
       },
       "original": {
-        "type": "file",
-        "url": "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64"
+        "owner": "LumePart",
+        "ref": "v1.1.2",
+        "repo": "Explo",
+        "type": "github"
       }
     },
     "minimalbase": {
