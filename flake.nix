@@ -4,8 +4,7 @@
     nixpkgs.follows = "minimalbase/nixpkgs";
     minimalbase.url = "github:nonrootdocker/minimalbase";
     explo-src = {
-      type = "file";
-      url = "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64";
+      url = "github:LumePart/Explo/v1.1.2";
       flake = false;
     };
   };
@@ -23,31 +22,52 @@
     # ----------------------------
     exploPython = pkgs.python3.withPackages (ps: [ ps.ytmusicapi ]);
 
+    # Built from source, pinned to a release tag. The prebuilt release binary
+    # ships an EMPTY embedded web UI (upstream's release workflow stubs it with
+    # `touch src/web/dist/index.html`); only a source build with the Vite
+    # frontend embedded serves a working UI.
+    version = "1.1.2";
+
     # ----------------------------
-    # Explo package (prebuilt release binary, frontend embedded upstream)
+    # Vite frontend. vite.config.js writes the build to ../dist (i.e.
+    # src/web/dist), which the Go binary embeds via //go:embed dist/*.
     # ----------------------------
-    explo = pkgs.stdenv.mkDerivation {
-      pname = "explo";
-      version = "release";
-      src = explo-src;
-      dontUnpack = true;
-      nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-      buildInputs = [ pkgs.stdenv.cc.cc.lib ];
+    explo-frontend = pkgs.buildNpmPackage {
+      pname = "explo-frontend";
+      inherit version;
+      src = "${explo-src}/src/web/frontend";
+      npmDepsHash = "sha256-N+i+VFHKJ9OxHyQKJ3vSw50N3tLjvFVPeG5aU0hLzqw=";
+      VITE_VERSION = version;
       installPhase = ''
-        mkdir -p $out/bin
-        cp $src $out/bin/explo
-        chmod +x $out/bin/explo
+        runHook preInstall
+        cp -r ../dist "$out"
+        runHook postInstall
       '';
     };
 
     # ----------------------------
-    # Explo version: read from the binary's own version output.
-    # Exposed as the `version` output for CI tagging.
+    # Explo binary, with the built frontend embedded.
     # ----------------------------
-    exploVersion = pkgs.runCommand "explo-version" { } ''
-      ${explo}/bin/explo --version 2>/dev/null \
-        | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 | tr -d '\n' > $out
-    '';
+    explo = pkgs.buildGoModule {
+      pname = "explo";
+      inherit version;
+      src = explo-src;
+      vendorHash = "sha256-pa3WaVJU4WY/EyE3VttfEVOwwaxvkfxQj0wrwOmefYQ=";
+      subPackages = [ "src/main" ];
+      ldflags = [ "-s" "-w" "-X" "explo/src/config.Version=${version}" ];
+      # Place the built frontend where //go:embed expects it before building.
+      preBuild = ''
+        mkdir -p src/web/dist
+        cp -r ${explo-frontend}/. src/web/dist/
+        [ -f src/web/sample.env ] || cp sample.env src/web/sample.env
+      '';
+      postInstall = ''
+        mv "$out/bin/main" "$out/bin/explo"
+      '';
+    };
+
+    # Version output for CI tagging.
+    exploVersion = pkgs.writeText "explo-version" version;
 
     # ----------------------------
     # User database configuration (/etc/passwd)
