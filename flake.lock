@@ -1,22 +1,5 @@
 {
   "nodes": {
-    "explo-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1781642256,
-        "narHash": "sha256-7FIDRNZn+Yh2c/oLU3Ggb4A9y+5q3vv17eVLmGR2Zeo=",
-        "owner": "LumePart",
-        "repo": "Explo",
-        "rev": "0147b7c15c2ad6f3a5679b552cef848a86729eaf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "LumePart",
-        "ref": "v1.1.2",
-        "repo": "Explo",
-        "type": "github"
-      }
-    },
     "minimalbase": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -52,7 +35,6 @@
     },
     "root": {
       "inputs": {
-        "explo-src": "explo-src",
         "minimalbase": "minimalbase",
         "nixpkgs": [
           "minimalbase",
