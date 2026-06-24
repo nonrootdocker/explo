@@ -1,5 +1,17 @@
 {
   "nodes": {
+    "explo-src": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-6V4sig0/QpEW7VKIIxp/5g72QZvUJvYvJO02dYWywmY=",
+        "type": "file",
+        "url": "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64"
+      }
+    },
     "minimalbase": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -35,6 +47,7 @@
     },
     "root": {
       "inputs": {
+        "explo-src": "explo-src",
         "minimalbase": "minimalbase",
         "nixpkgs": [
           "minimalbase",
