@@ -67,6 +67,10 @@
         process = {
           exec = "${explo}/bin/explo";
           args = [ ];
+          # explo reads its .env relative to the cwd and does not create its
+          # own data dirs; run from /data and pre-create config/cache there.
+          cwd = "/data";
+          dirs = [ "/data/config" "/data/cache" ];
         };
       };
       destination = "/app/main";
@@ -102,6 +106,7 @@
             "TZ=UTC"
             "LANG=en_US.UTF-8"
             "WEB_ADDR=:7288"
+            "WEB_DATA_PATH=/data/config"
           ];
         };
       };
