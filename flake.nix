@@ -3,8 +3,13 @@
   inputs = {
     nixpkgs.follows = "minimalbase/nixpkgs";
     minimalbase.url = "github:nonrootdocker/minimalbase";
+    explo-src = {
+      type = "file";
+      url = "https://github.com/LumePart/Explo/releases/latest/download/explo-linux-amd64";
+      flake = false;
+    };
   };
-  outputs = { self, nixpkgs, minimalbase }:
+  outputs = { self, nixpkgs, minimalbase, explo-src }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
@@ -18,61 +23,31 @@
     # ----------------------------
     exploPython = pkgs.python3.withPackages (ps: [ ps.ytmusicapi ]);
 
-    # Built from source, pinned to a release tag. The prebuilt release binary
-    # ships an EMPTY embedded web UI (upstream's release workflow stubs it with
-    # `touch src/web/dist/index.html`); only a source build with the Vite
-    # frontend embedded serves a working UI.
-    #
-    # version + the three hashes below (src, npmDepsHash, vendorHash) are bumped
-    # together by .github/workflows/update.yml.
-    version = "1.1.2";
-    exploSrc = pkgs.fetchFromGitHub {
-      owner = "LumePart";
-      repo = "Explo";
-      tag = "v${version}";
-      hash = "sha256-7FIDRNZn+Yh2c/oLU3Ggb4A9y+5q3vv17eVLmGR2Zeo=";
-    };
-
     # ----------------------------
-    # Vite frontend. vite.config.js writes the build to ../dist (i.e.
-    # src/web/dist), which the Go binary embeds via //go:embed dist/*.
+    # Explo package (prebuilt release binary, frontend embedded upstream)
     # ----------------------------
-    explo-frontend = pkgs.buildNpmPackage {
-      pname = "explo-frontend";
-      inherit version;
-      src = "${exploSrc}/src/web/frontend";
-      npmDepsHash = "sha256-N+i+VFHKJ9OxHyQKJ3vSw50N3tLjvFVPeG5aU0hLzqw=";
-      VITE_VERSION = version;
-      installPhase = ''
-        runHook preInstall
-        cp -r ../dist "$out"
-        runHook postInstall
-      '';
-    };
-
-    # ----------------------------
-    # Explo binary, with the built frontend embedded.
-    # ----------------------------
-    explo = pkgs.buildGoModule {
+    explo = pkgs.stdenv.mkDerivation {
       pname = "explo";
-      inherit version;
-      src = exploSrc;
-      vendorHash = "sha256-pa3WaVJU4WY/EyE3VttfEVOwwaxvkfxQj0wrwOmefYQ=";
-      subPackages = [ "src/main" ];
-      ldflags = [ "-s" "-w" "-X" "explo/src/config.Version=${version}" ];
-      # Place the built frontend where //go:embed expects it before building.
-      preBuild = ''
-        mkdir -p src/web/dist
-        cp -r ${explo-frontend}/. src/web/dist/
-        [ -f src/web/sample.env ] || cp sample.env src/web/sample.env
-      '';
-      postInstall = ''
-        mv "$out/bin/main" "$out/bin/explo"
+      version = "release";
+      src = explo-src;
+      dontUnpack = true;
+      nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+      buildInputs = [ pkgs.stdenv.cc.cc.lib ];
+      installPhase = ''
+        mkdir -p $out/bin
+        cp $src $out/bin/explo
+        chmod +x $out/bin/explo
       '';
     };
 
-    # Version output for CI tagging.
-    exploVersion = pkgs.writeText "explo-version" version;
+    # ----------------------------
+    # Explo version: read from the binary's own version output.
+    # Exposed as the `version` output for CI tagging.
+    # ----------------------------
+    exploVersion = pkgs.runCommand "explo-version" { } ''
+      ${explo}/bin/explo --version 2>/dev/null \
+        | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 | tr -d '\n' > $out
+    '';
 
     # ----------------------------
     # User database configuration (/etc/passwd)
@@ -105,7 +80,6 @@
     packages.${system} = {
       default = self.packages.${system}.explo-image;
       version = exploVersion;
-      inherit explo explo-frontend;
       explo-image = pkgs.dockerTools.buildImage {
         name = "explo";
         tag = "latest";
@@ -127,14 +101,10 @@
         config = {
           Entrypoint = [ "${minimalbase.packages.${system}.container-init}/bin/container-init" ];
           User = "1000:1000";
-          ExposedPorts = {
-            "7288/tcp" = { };
-          };
           Env = [
             "PATH=/bin"
             "TZ=UTC"
             "LANG=en_US.UTF-8"
-            "WEB_UI=true"
             "WEB_ADDR=:7288"
             "WEB_DATA_PATH=/data/config"
           ];
