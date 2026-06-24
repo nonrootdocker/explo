@@ -101,10 +101,14 @@
         config = {
           Entrypoint = [ "${minimalbase.packages.${system}.container-init}/bin/container-init" ];
           User = "1000:1000";
+          ExposedPorts = {
+            "7288/tcp" = { };
+          };
           Env = [
             "PATH=/bin"
             "TZ=UTC"
             "LANG=en_US.UTF-8"
+            "WEB_UI=true"
             "WEB_ADDR=:7288"
             "WEB_DATA_PATH=/data/config"
           ];
