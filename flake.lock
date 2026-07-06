@@ -17,11 +17,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1782265785,
-        "narHash": "sha256-nYFisjFW8yYjW5RYn3ark4cBd9DALaxC7iVejHjQxvY=",
+        "lastModified": 1783302338,
+        "narHash": "sha256-5Bczq3tdMZR5r++aLOfkD1RWScA9tgPRWAiEmlRaOs0=",
         "owner": "nonrootdocker",
         "repo": "minimalbase",
-        "rev": "5fb61d590c64f443bc7658ce76520255dbdefca3",
+        "rev": "66c7fb8f86524003f3db7acb12f552bb4a2f26b7",
         "type": "github"
       },
       "original": {
@@ -32,11 +32,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1782092127,
-        "narHash": "sha256-JLv04LY64Xf3QNa2bBwRgCCDwRMQaZlJc4xsAOwEfiU=",
+        "lastModified": 1783301605,
+        "narHash": "sha256-hSwFn3/e70Z32AozXOadpmCub4ITFrqChPJJJ/qOAVY=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "42342cbe4e6f9fdf22afb69b611f803c9c5dab67",
+        "rev": "95e7ef5ed77baf8e2939ff3770b9eb02632389fe",
         "type": "github"
       },
       "original": {
