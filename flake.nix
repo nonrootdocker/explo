@@ -66,6 +66,7 @@
         version = 2;
         process = {
           exec = "${explo}/bin/explo";
+          mode = "triggered";
           args = [ ];
           # explo reads its .env relative to the cwd and does not create its
           # own data dirs; run from /data and pre-create config/cache there.
