@@ -32,7 +32,7 @@ jobs:
             experimental-features = nix-command flakes
 
       - name: Update explo-src and open PR
-        uses: DeterminateSystems/update-flake-lock@v28
+        uses: DeterminateSystems/update-flake-lock@v29
         with:
           inputs: explo-src
           token: ${{ steps.app-token.outputs.token }}
