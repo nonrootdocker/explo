@@ -17,11 +17,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1786098172,
-        "narHash": "sha256-Fsdyl+p/ZDYYpmPHhgH0suMwWL8bUGj8tkzwVOLFQgI=",
+        "lastModified": 1793756642,
+        "narHash": "sha256-l0kuWUlIHfQ6f/cXi5Hd1H7XWToH0bX5ACGR7vgTMFs=",
         "owner": "nonrootdocker",
         "repo": "minimalbase",
-        "rev": "2669553edcf3f823dd397766e6416c8e636b94ad",
+        "rev": "f70f1203a11b2603fc9cec0df174b9abe28a8cb9",
         "type": "github"
       },
       "original": {
